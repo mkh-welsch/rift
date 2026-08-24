@@ -4,6 +4,7 @@ use std::path::Path;
 const BTRFS_SUPER_MAGIC: libc::c_long = 0x9123_683e;
 const BTRFS_IOC_SNAP_CREATE: libc::c_ulong = 0x5000_9401;
 const BTRFS_IOC_SNAP_DESTROY: libc::c_ulong = 0x5000_940f;
+const BTRFS_IOC_FS_INFO: libc::c_ulong = 0x8400_941f;
 
 pub(super) fn is_filesystem(path: &Path) -> Result<bool> {
     let path = c_path(path)?;
@@ -20,6 +21,20 @@ pub(super) fn is_subvolume(path: &Path) -> Result<bool> {
     use std::os::unix::fs::MetadataExt;
 
     Ok(is_filesystem(path)? && std::fs::metadata(path)?.ino() == 256)
+}
+
+pub(super) fn filesystem_id(path: &Path) -> Result<[u8; 16]> {
+    use std::fs::File;
+    use std::os::fd::AsRawFd;
+
+    let file = File::open(path)?;
+    let mut info = BtrfsIoctlFsInfoArgs::default();
+    // SAFETY: file is a live Btrfs path and info is the exact 1024-byte UAPI
+    // structure expected by BTRFS_IOC_FS_INFO.
+    if unsafe { libc::ioctl(file.as_raw_fd(), BTRFS_IOC_FS_INFO, &mut info) } != 0 {
+        return Err(std::io::Error::last_os_error().into());
+    }
+    Ok(info.fsid)
 }
 
 pub(super) fn snapshot_exact(from: &Path, to: &Path) -> Result<()> {
@@ -49,6 +64,37 @@ pub(super) fn remove_snapshot(path: &Path) -> Result<()> {
 struct BtrfsIoctlVolArgs {
     fd: i64,
     name: [libc::c_char; 4088],
+}
+
+#[repr(C)]
+struct BtrfsIoctlFsInfoArgs {
+    max_id: u64,
+    num_devices: u64,
+    fsid: [u8; 16],
+    nodesize: u32,
+    sectorsize: u32,
+    clone_alignment: u32,
+    csum_type: u16,
+    csum_size: u16,
+    flags: u64,
+    reserved: [u8; 968],
+}
+
+impl Default for BtrfsIoctlFsInfoArgs {
+    fn default() -> Self {
+        Self {
+            max_id: 0,
+            num_devices: 0,
+            fsid: [0; 16],
+            nodesize: 0,
+            sectorsize: 0,
+            clone_alignment: 0,
+            csum_type: 0,
+            csum_size: 0,
+            flags: 0,
+            reserved: [0; 968],
+        }
+    }
 }
 
 fn path_ioctl(
