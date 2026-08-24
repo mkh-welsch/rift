@@ -1,4 +1,4 @@
-use rift::{Create, CreateOptions, HookMode, Manager};
+use rift::{CopyMode, Create, CreateOptions, HookMode, Manager};
 use serde::Serialize;
 use std::env;
 use std::error::Error;
@@ -13,6 +13,7 @@ struct BenchmarkResult {
     timestamp_ms: u128,
     platform: &'static str,
     source: PathBuf,
+    copy_mode: &'static str,
     samples_ms: Vec<f64>,
     median_ms: f64,
     min_ms: f64,
@@ -34,7 +35,12 @@ fn run() -> Result<(), Box<dyn Error>> {
     let mut source = None;
     let mut output = None;
     let mut samples = 1;
+    let mut copy_mode = CopyMode::Filtered;
     while let Some(argument) = arguments.next() {
+        if argument == OsStr::new("--copy-all") {
+            copy_mode = CopyMode::All;
+            continue;
+        }
         if argument == OsStr::new("--output") {
             if output.is_some() {
                 return Err("the create benchmark accepts only one --output path".into());
@@ -64,7 +70,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         source = Some(PathBuf::from(argument));
     }
     let source = source.ok_or(
-        "usage: cargo bench --bench create -- /path/to/workspace [--samples N] [--output /path/to/result.json]",
+        "usage: cargo bench --bench create -- /path/to/workspace [--copy-all] [--samples N] [--output /path/to/result.json]",
     )?;
 
     let mut manager = Manager::open_default()?;
@@ -78,7 +84,9 @@ fn run() -> Result<(), Box<dyn Error>> {
         let started = Instant::now();
         let destination = manager.create_with_options(
             Create::new(source.clone()).named(format!("benchmark-{process_id}-{run_id}-{sample}")),
-            CreateOptions::default().hook_mode(HookMode::Skip),
+            CreateOptions::default()
+                .copy_mode(copy_mode)
+                .hook_mode(HookMode::Skip),
         )?;
         let elapsed_ms = started.elapsed().as_secs_f64() * 1_000.0;
 
@@ -112,6 +120,10 @@ fn run() -> Result<(), Box<dyn Error>> {
             timestamp_ms: SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis(),
             platform: env::consts::OS,
             source,
+            copy_mode: match copy_mode {
+                CopyMode::Filtered => "filtered",
+                CopyMode::All => "all",
+            },
             samples_ms,
             median_ms,
             min_ms,

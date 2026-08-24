@@ -1,0 +1,71 @@
+{
+  "schema_version": "greppy.rift-spike.v1",
+  "date": "2026-08-25",
+  "upstream_commit": "757a22cb247f9b24a849c9d6bd56f49c0ec494f8",
+  "platform": {
+    "os": "macOS 26.2",
+    "arch": "arm64",
+    "cpu": "Apple M5",
+    "filesystem": "APFS"
+  },
+  "fixtures": [
+    {
+      "name": "greppy-medium",
+      "tracked_files": 619,
+      "logical_size_mib": 136,
+      "samples": {
+        "rift_filtered": 20,
+        "rift_exact": 20,
+        "git_worktree_cold": 20,
+        "git_worktree_warm_move": 10
+      },
+      "median_ms": {
+        "rift_filtered": 175.868,
+        "rift_exact": 10.416,
+        "git_worktree_cold": 219.596,
+        "git_worktree_warm_move": 23.168
+      }
+    },
+    {
+      "name": "large-metadata",
+      "tracked_files": 10001,
+      "large_file_mib": 128,
+      "samples": {
+        "rift_filtered": 10,
+        "rift_exact": 10,
+        "git_worktree_cold": 10,
+        "git_worktree_warm_move": 10
+      },
+      "median_ms": {
+        "rift_filtered": 2935.610,
+        "rift_exact": 94.863,
+        "git_worktree_cold": 1005.970,
+        "git_worktree_warm_move": 27.508
+      }
+    }
+  ],
+  "concurrency": {
+    "workers": 10,
+    "greppy_medium": {
+      "create_phase_ms": 338.760,
+      "max_individual_create_ms": 271.664,
+      "cleanup_phase_ms": 1750.717,
+      "cleanup_passed": true
+    },
+    "large_metadata": {
+      "create_phase_ms": 1183.238,
+      "max_individual_create_ms": 1166.017,
+      "cleanup_phase_ms": 6579.006,
+      "cleanup_passed": true
+    }
+  },
+  "correctness": {
+    "upstream_workspace_tests": "73 passed",
+    "greppy_0_3_2_index_and_read": "passed",
+    "private_edit_isolation": "passed",
+    "detached_proposal_commit": "passed",
+    "linked_git_worktree_source": "rejected_by_upstream",
+    "filtered_clone_with_com_apple_provenance": "permission_denied",
+    "exact_clone_with_com_apple_provenance": "passed"
+  }
+}
