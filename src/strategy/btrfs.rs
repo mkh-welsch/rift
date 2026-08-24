@@ -57,7 +57,31 @@ pub(super) fn snapshot_exact(from: &Path, to: &Path) -> Result<()> {
 }
 
 pub(super) fn remove_snapshot(path: &Path) -> Result<()> {
-    path_ioctl(path, BTRFS_IOC_SNAP_DESTROY, None, "remove snapshot")
+    match path_ioctl(path, BTRFS_IOC_SNAP_DESTROY, None, "remove snapshot") {
+        Ok(()) => Ok(()),
+        Err(Error::Io(error))
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::PermissionDenied | std::io::ErrorKind::Unsupported
+            ) =>
+        {
+            remove_empty_subvolume(path)
+        }
+        Err(error) => Err(error),
+    }
+}
+
+fn remove_empty_subvolume(path: &Path) -> Result<()> {
+    for entry in std::fs::read_dir(path)? {
+        let entry = entry?;
+        if entry.file_type()?.is_dir() {
+            std::fs::remove_dir_all(entry.path())?;
+        } else {
+            std::fs::remove_file(entry.path())?;
+        }
+    }
+    std::fs::remove_dir(path)?;
+    Ok(())
 }
 
 #[repr(C)]
@@ -132,10 +156,14 @@ fn path_ioctl(
     if unsafe { libc::ioctl(parent.as_raw_fd(), request, &args) } == 0 {
         return Ok(());
     }
+    let error = std::io::Error::last_os_error();
+    if request == BTRFS_IOC_SNAP_DESTROY {
+        return Err(Error::Io(error));
+    }
     Err(Error::Unavailable(format!(
         "failed to {action} {}: {}",
         path.display(),
-        std::io::Error::last_os_error()
+        error
     )))
 }
 
