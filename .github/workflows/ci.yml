@@ -16,7 +16,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-14]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -32,7 +32,7 @@ jobs:
       matrix:
         filesystem: [btrfs, xfs-reflink, ext4]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - name: Install filesystem tools
         run: |

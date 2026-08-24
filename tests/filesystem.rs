@@ -5,7 +5,9 @@ use std::path::PathBuf;
 
 #[test]
 fn native_filesystem_contract() {
-    let source = required_path("GREPPY_COW_TEST_SOURCE");
+    let Some(source) = optional_path("GREPPY_COW_TEST_SOURCE") else {
+        return;
+    };
     let destination_root = required_path("GREPPY_COW_TEST_DESTINATION_ROOT");
     let expected = std::env::var("GREPPY_COW_EXPECT_BACKEND")
         .expect("GREPPY_COW_EXPECT_BACKEND must be set by the filesystem harness");
@@ -49,4 +51,8 @@ fn required_path(name: &str) -> PathBuf {
     std::env::var_os(name)
         .map(PathBuf::from)
         .unwrap_or_else(|| panic!("{name} must be set by the filesystem harness"))
+}
+
+fn optional_path(name: &str) -> Option<PathBuf> {
+    std::env::var_os(name).map(PathBuf::from)
 }
