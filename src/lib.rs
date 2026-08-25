@@ -65,6 +65,26 @@ pub struct RemoveReceipt {
     pub removed: bool,
 }
 
+/// Creates an empty directory suitable for later use as a snapshot source.
+/// On Btrfs this is a subvolume; on other filesystems it is a plain directory.
+/// The path must not exist and its parent must already be a directory.
+pub fn prepare_snapshot_source(path: impl AsRef<Path>) -> Result<PathBuf> {
+    let path = path.as_ref();
+    if path_exists(path)? {
+        return Err(Error::DestinationExists(path.to_path_buf()));
+    }
+    let parent = path
+        .parent()
+        .filter(|value| !value.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let parent = canonical_directory(parent)?;
+    let path = parent.join(path.file_name().ok_or_else(|| {
+        Error::InvalidPath(format!("path has no final component: {}", path.display()))
+    })?);
+    strategy::prepare_snapshot_source(&path)?;
+    Ok(path)
+}
+
 /// Reports the exact native CoW backend available for this source and
 /// destination root. The probe never modifies the source.
 pub fn probe(source: impl AsRef<Path>, destination_root: impl AsRef<Path>) -> Result<Capability> {
@@ -204,5 +224,20 @@ mod tests {
         let receipt = remove_snapshot(&destination).unwrap();
         assert!(!receipt.removed);
         assert_eq!(receipt.destination, destination);
+    }
+
+    #[test]
+    fn prepared_snapshot_source_is_empty_and_existing_paths_are_refused() {
+        let temp = TempDir::new().unwrap();
+        let source = temp.path().join("source");
+
+        let prepared = prepare_snapshot_source(&source).unwrap();
+        assert!(source.is_dir());
+        assert_eq!(prepared, fs::canonicalize(&source).unwrap());
+        assert_eq!(fs::read_dir(&source).unwrap().count(), 0);
+        assert!(matches!(
+            prepare_snapshot_source(&source).unwrap_err(),
+            Error::DestinationExists(path) if path == source
+        ));
     }
 }

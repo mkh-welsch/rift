@@ -5,10 +5,11 @@ engine for Greppy agent workspaces. It is a hard fork of selected filesystem
 mechanics from [anomalyco/rift](https://github.com/anomalyco/rift); it is not a
 general-purpose workspace manager or a drop-in Rift replacement.
 
-The crate exposes exactly three operations:
+The crate exposes exactly four operations:
 
 ```rust
 probe(source, destination_root) -> Capability
+prepare_snapshot_source(path) -> PathBuf
 snapshot_exact(source, destination) -> SnapshotReceipt
 remove_snapshot(destination) -> RemoveReceipt
 ```
@@ -17,6 +18,11 @@ It contains no CLI, FFI, hook execution, Git policy, registry, marker, naming,
 filtering, source conversion, or implicit initialization. Greppy owns the
 complete workspace lifecycle and falls back to its native Git-worktree backend
 when `probe` returns an error.
+
+`prepare_snapshot_source` creates an empty Btrfs subvolume when its parent is
+on Btrfs and an empty ordinary directory elsewhere. It exists solely so Greppy
+can populate a reusable snapshot template without invoking the `btrfs` CLI or
+converting an existing source tree.
 
 ## Backends
 

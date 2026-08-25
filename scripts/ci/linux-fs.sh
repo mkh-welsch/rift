@@ -51,13 +51,6 @@ sudo chown "${USER}:${USER}" "${mountpoint}"
 source="${mountpoint}/source"
 destination_root="${mountpoint}/snapshots"
 mkdir -p "${destination_root}"
-if [[ "${filesystem}" == "btrfs" ]]; then
-  btrfs subvolume create "${source}"
-else
-  mkdir "${source}"
-fi
-mkdir "${source}/nested"
-printf 'source\n' >"${source}/nested/file.txt"
 
 GREPPY_COW_TEST_SOURCE="${source}" \
 GREPPY_COW_TEST_DESTINATION_ROOT="${destination_root}" \

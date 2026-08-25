@@ -31,6 +31,18 @@ pub(super) fn probe(source: &Path, destination_root: &Path) -> Result<Capability
     })
 }
 
+pub(super) fn prepare_snapshot_source(path: &Path) -> Result<()> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| Error::InvalidPath(format!("path has no parent: {}", path.display())))?;
+    if btrfs::is_filesystem(parent)? {
+        btrfs::create_subvolume(path)
+    } else {
+        std::fs::create_dir(path)?;
+        Ok(())
+    }
+}
+
 pub(super) fn snapshot_exact(from: &Path, to: &Path, backend: Backend) -> Result<()> {
     match backend {
         Backend::BtrfsSnapshot => btrfs::snapshot_exact(from, to),

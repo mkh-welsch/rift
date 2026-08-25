@@ -3,6 +3,7 @@ use std::path::Path;
 
 const BTRFS_SUPER_MAGIC: libc::c_long = 0x9123_683e;
 const BTRFS_IOC_SNAP_CREATE: libc::c_ulong = 0x5000_9401;
+const BTRFS_IOC_SUBVOL_CREATE: libc::c_ulong = 0x5000_940e;
 const BTRFS_IOC_SNAP_DESTROY: libc::c_ulong = 0x5000_940f;
 const BTRFS_IOC_FS_INFO: libc::c_ulong = 0x8400_941f;
 
@@ -53,6 +54,15 @@ pub(super) fn snapshot_exact(from: &Path, to: &Path) -> Result<()> {
         BTRFS_IOC_SNAP_CREATE,
         Some(source.as_raw_fd()),
         "create snapshot",
+    )
+}
+
+pub(super) fn create_subvolume(path: &Path) -> Result<()> {
+    path_ioctl(
+        path,
+        BTRFS_IOC_SUBVOL_CREATE,
+        None,
+        "create source subvolume",
     )
 }
 

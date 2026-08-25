@@ -1,6 +1,6 @@
 #![cfg(target_os = "linux")]
 
-use greppy_rift_core::{Backend, probe, remove_snapshot, snapshot_exact};
+use greppy_rift_core::{Backend, prepare_snapshot_source, probe, remove_snapshot, snapshot_exact};
 use std::path::PathBuf;
 
 #[test]
@@ -11,6 +11,9 @@ fn native_filesystem_contract() {
     let destination_root = required_path("GREPPY_COW_TEST_DESTINATION_ROOT");
     let expected = std::env::var("GREPPY_COW_EXPECT_BACKEND")
         .expect("GREPPY_COW_EXPECT_BACKEND must be set by the filesystem harness");
+    prepare_snapshot_source(&source).unwrap();
+    std::fs::create_dir(source.join("nested")).unwrap();
+    std::fs::write(source.join("nested/file.txt"), b"source\n").unwrap();
     let original = std::fs::read(source.join("nested/file.txt")).unwrap();
 
     if expected == "unavailable" {

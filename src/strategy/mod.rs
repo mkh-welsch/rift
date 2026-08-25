@@ -25,6 +25,17 @@ pub(super) fn probe(source: &Path, destination_root: &Path) -> Result<Capability
     ))
 }
 
+pub(super) fn prepare_snapshot_source(path: &Path) -> Result<()> {
+    #[cfg(target_os = "linux")]
+    return linux::prepare_snapshot_source(path);
+
+    #[cfg(not(target_os = "linux"))]
+    {
+        std::fs::create_dir(path)?;
+        Ok(())
+    }
+}
+
 pub(super) fn snapshot_exact(from: &Path, to: &Path, backend: Backend) -> Result<()> {
     #[cfg(target_os = "macos")]
     return match backend {
