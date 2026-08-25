@@ -6,6 +6,9 @@ const BTRFS_IOC_SNAP_CREATE: libc::c_ulong = 0x5000_9401;
 const BTRFS_IOC_SUBVOL_CREATE: libc::c_ulong = 0x5000_940e;
 const BTRFS_IOC_SNAP_DESTROY: libc::c_ulong = 0x5000_940f;
 const BTRFS_IOC_FS_INFO: libc::c_ulong = 0x8400_941f;
+const BTRFS_IOC_SUBVOL_GETFLAGS: libc::c_ulong = 0x8008_9419;
+const BTRFS_IOC_SUBVOL_SETFLAGS: libc::c_ulong = 0x4008_941a;
+const BTRFS_SUBVOL_RDONLY: u64 = 1 << 1;
 
 pub(super) fn is_filesystem(path: &Path) -> Result<bool> {
     let path = c_path(path)?;
@@ -64,6 +67,43 @@ pub(super) fn create_subvolume(path: &Path) -> Result<()> {
         None,
         "create source subvolume",
     )
+}
+
+pub(super) fn is_read_only(path: &Path) -> Result<bool> {
+    use std::fs::File;
+    use std::os::fd::AsRawFd;
+
+    let file = File::open(path)?;
+    let mut flags = 0u64;
+    // SAFETY: file is a live Btrfs subvolume and flags is the exact u64 UAPI
+    // value expected by BTRFS_IOC_SUBVOL_GETFLAGS.
+    if unsafe { libc::ioctl(file.as_raw_fd(), BTRFS_IOC_SUBVOL_GETFLAGS, &mut flags) } != 0 {
+        return Err(std::io::Error::last_os_error().into());
+    }
+    Ok(flags & BTRFS_SUBVOL_RDONLY != 0)
+}
+
+pub(super) fn set_read_only(path: &Path, read_only: bool) -> Result<()> {
+    use std::fs::File;
+    use std::os::fd::AsRawFd;
+
+    let file = File::open(path)?;
+    let mut flags = 0u64;
+    // Preserve every flag owned by the kernel rather than replacing the mask.
+    if unsafe { libc::ioctl(file.as_raw_fd(), BTRFS_IOC_SUBVOL_GETFLAGS, &mut flags) } != 0 {
+        return Err(std::io::Error::last_os_error().into());
+    }
+    if read_only {
+        flags |= BTRFS_SUBVOL_RDONLY;
+    } else {
+        flags &= !BTRFS_SUBVOL_RDONLY;
+    }
+    // SAFETY: file is a live Btrfs subvolume and flags is the exact u64 UAPI
+    // value expected by BTRFS_IOC_SUBVOL_SETFLAGS.
+    if unsafe { libc::ioctl(file.as_raw_fd(), BTRFS_IOC_SUBVOL_SETFLAGS, &flags) } != 0 {
+        return Err(std::io::Error::last_os_error().into());
+    }
+    Ok(())
 }
 
 pub(super) fn remove_snapshot(path: &Path) -> Result<()> {

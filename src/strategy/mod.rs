@@ -36,6 +36,17 @@ pub(super) fn prepare_snapshot_source(path: &Path) -> Result<()> {
     }
 }
 
+pub(super) fn seal_snapshot_source(path: &Path) -> Result<bool> {
+    #[cfg(target_os = "linux")]
+    return linux::seal_snapshot_source(path);
+
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = path;
+        Ok(false)
+    }
+}
+
 pub(super) fn snapshot_exact(from: &Path, to: &Path, backend: Backend) -> Result<()> {
     #[cfg(target_os = "macos")]
     return match backend {

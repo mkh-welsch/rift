@@ -22,13 +22,23 @@ pub(super) fn probe(source: &Path, destination_root: &Path) -> Result<Capability
         return Ok(Capability {
             backend: Backend::BtrfsSnapshot,
             constant_time_metadata: true,
+            source_immutable: btrfs::is_read_only(source)?,
         });
     }
     reflink::verify(destination_root)?;
     Ok(Capability {
         backend: Backend::LinuxReflinkTree,
         constant_time_metadata: false,
+        source_immutable: false,
     })
+}
+
+pub(super) fn seal_snapshot_source(path: &Path) -> Result<bool> {
+    if !btrfs::is_subvolume(path)? {
+        return Ok(false);
+    }
+    btrfs::set_read_only(path, true)?;
+    Ok(btrfs::is_read_only(path)?)
 }
 
 pub(super) fn prepare_snapshot_source(path: &Path) -> Result<()> {

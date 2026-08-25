@@ -23,6 +23,7 @@ pub(super) fn probe(source: &Path, destination_root: &Path) -> Result<Capability
         // namespace is traversed, so callers must not treat this backend as a
         // constant-time metadata snapshot.
         constant_time_metadata: false,
+        source_immutable: false,
     })
 }
 
@@ -78,6 +79,7 @@ mod tests {
         let capability = probe(&source, temp.path()).unwrap();
         assert_eq!(capability.backend, Backend::ApfsClonefile);
         assert!(!capability.constant_time_metadata);
+        assert!(!capability.source_immutable);
 
         let receipt = crate::snapshot_exact(&source, &destination).unwrap();
         assert_eq!(receipt.backend, Backend::ApfsClonefile);

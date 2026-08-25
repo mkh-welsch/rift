@@ -1,6 +1,8 @@
 #![cfg(target_os = "linux")]
 
-use greppy_rift_core::{Backend, prepare_snapshot_source, probe, remove_snapshot, snapshot_exact};
+use greppy_rift_core::{
+    Backend, prepare_snapshot_source, probe, remove_snapshot, seal_snapshot_source, snapshot_exact,
+};
 use std::path::PathBuf;
 
 #[test]
@@ -15,6 +17,9 @@ fn native_filesystem_contract() {
     std::fs::create_dir(source.join("nested")).unwrap();
     std::fs::write(source.join("nested/file.txt"), b"source\n").unwrap();
     let original = std::fs::read(source.join("nested/file.txt")).unwrap();
+
+    let sealed = seal_snapshot_source(&source).unwrap();
+    assert_eq!(sealed, expected == "btrfs_snapshot");
 
     if expected == "unavailable" {
         assert!(probe(&source, &destination_root).is_err());
@@ -34,6 +39,10 @@ fn native_filesystem_contract() {
     assert_eq!(capability.backend, expected);
     assert_eq!(
         capability.constant_time_metadata,
+        expected == Backend::BtrfsSnapshot
+    );
+    assert_eq!(
+        capability.source_immutable,
         expected == Backend::BtrfsSnapshot
     );
 

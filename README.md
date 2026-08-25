@@ -5,11 +5,12 @@ engine for Greppy agent workspaces. It is a hard fork of selected filesystem
 mechanics from [anomalyco/rift](https://github.com/anomalyco/rift); it is not a
 general-purpose workspace manager or a drop-in Rift replacement.
 
-The crate exposes exactly four operations:
+The crate exposes exactly five operations:
 
 ```rust
 probe(source, destination_root) -> Capability
 prepare_snapshot_source(path) -> PathBuf
+seal_snapshot_source(path) -> bool
 snapshot_exact(source, destination) -> SnapshotReceipt
 remove_snapshot(destination) -> RemoveReceipt
 ```
@@ -23,6 +24,10 @@ when `probe` returns an error.
 on Btrfs and an empty ordinary directory elsewhere. It exists solely so Greppy
 can populate a reusable snapshot template without invoking the `btrfs` CLI or
 converting an existing source tree.
+
+`seal_snapshot_source` sets and verifies the Btrfs read-only subvolume flag. It
+returns `false` on backends without a filesystem-enforced directory seal, so a
+consumer cannot mistake process policy or ordinary permissions for immutability.
 
 ## Backends
 

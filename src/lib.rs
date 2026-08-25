@@ -50,6 +50,8 @@ pub struct Capability {
     pub backend: Backend,
     /// True only when snapshot creation does not walk every source entry.
     pub constant_time_metadata: bool,
+    /// True only when the filesystem itself prevents source-tree writes.
+    pub source_immutable: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -83,6 +85,13 @@ pub fn prepare_snapshot_source(path: impl AsRef<Path>) -> Result<PathBuf> {
     })?);
     strategy::prepare_snapshot_source(&path)?;
     Ok(path)
+}
+
+/// Makes a prepared snapshot source immutable when the native backend supports
+/// that contract. Returns `true` only when the filesystem enforces it.
+pub fn seal_snapshot_source(path: impl AsRef<Path>) -> Result<bool> {
+    let path = canonical_directory(path.as_ref())?;
+    strategy::seal_snapshot_source(&path)
 }
 
 /// Reports the exact native CoW backend available for this source and
