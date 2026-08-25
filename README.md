@@ -10,7 +10,7 @@ The crate exposes exactly five operations:
 ```rust
 probe(source, destination_root) -> Capability
 prepare_snapshot_source(path) -> PathBuf
-seal_snapshot_source(path) -> bool
+set_snapshot_source_immutable(path, immutable) -> bool
 snapshot_exact(source, destination) -> SnapshotReceipt
 remove_snapshot(destination) -> RemoveReceipt
 ```
@@ -25,9 +25,10 @@ on Btrfs and an empty ordinary directory elsewhere. It exists solely so Greppy
 can populate a reusable snapshot template without invoking the `btrfs` CLI or
 converting an existing source tree.
 
-`seal_snapshot_source` sets and verifies the Btrfs read-only subvolume flag. It
-returns `false` on backends without a filesystem-enforced directory seal, so a
-consumer cannot mistake process policy or ordinary permissions for immutability.
+`set_snapshot_source_immutable` sets and verifies the Btrfs read-only subvolume
+flag and can clear it before managed replacement. It returns `false` on
+backends without a filesystem-enforced directory seal, so a consumer cannot
+mistake process policy or ordinary permissions for immutability.
 
 ## Backends
 

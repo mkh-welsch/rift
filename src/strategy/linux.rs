@@ -33,11 +33,11 @@ pub(super) fn probe(source: &Path, destination_root: &Path) -> Result<Capability
     })
 }
 
-pub(super) fn seal_snapshot_source(path: &Path) -> Result<bool> {
+pub(super) fn set_snapshot_source_immutable(path: &Path, immutable: bool) -> Result<bool> {
     if !btrfs::is_subvolume(path)? {
         return Ok(false);
     }
-    btrfs::set_read_only(path, true)?;
+    btrfs::set_read_only(path, immutable)?;
     Ok(btrfs::is_read_only(path)?)
 }
 

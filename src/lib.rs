@@ -87,11 +87,11 @@ pub fn prepare_snapshot_source(path: impl AsRef<Path>) -> Result<PathBuf> {
     Ok(path)
 }
 
-/// Makes a prepared snapshot source immutable when the native backend supports
-/// that contract. Returns `true` only when the filesystem enforces it.
-pub fn seal_snapshot_source(path: impl AsRef<Path>) -> Result<bool> {
+/// Sets filesystem-enforced immutability for a prepared snapshot source when
+/// the native backend supports it. Returns the enforced state after the call.
+pub fn set_snapshot_source_immutable(path: impl AsRef<Path>, immutable: bool) -> Result<bool> {
     let path = canonical_directory(path.as_ref())?;
-    strategy::seal_snapshot_source(&path)
+    strategy::set_snapshot_source_immutable(&path, immutable)
 }
 
 /// Reports the exact native CoW backend available for this source and

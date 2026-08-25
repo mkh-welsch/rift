@@ -36,13 +36,13 @@ pub(super) fn prepare_snapshot_source(path: &Path) -> Result<()> {
     }
 }
 
-pub(super) fn seal_snapshot_source(path: &Path) -> Result<bool> {
+pub(super) fn set_snapshot_source_immutable(path: &Path, immutable: bool) -> Result<bool> {
     #[cfg(target_os = "linux")]
-    return linux::seal_snapshot_source(path);
+    return linux::set_snapshot_source_immutable(path, immutable);
 
     #[cfg(not(target_os = "linux"))]
     {
-        let _ = path;
+        let _ = (path, immutable);
         Ok(false)
     }
 }

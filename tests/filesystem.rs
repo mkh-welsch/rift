@@ -1,7 +1,8 @@
 #![cfg(target_os = "linux")]
 
 use greppy_rift_core::{
-    Backend, prepare_snapshot_source, probe, remove_snapshot, seal_snapshot_source, snapshot_exact,
+    Backend, prepare_snapshot_source, probe, remove_snapshot, set_snapshot_source_immutable,
+    snapshot_exact,
 };
 use std::path::PathBuf;
 
@@ -18,7 +19,7 @@ fn native_filesystem_contract() {
     std::fs::write(source.join("nested/file.txt"), b"source\n").unwrap();
     let original = std::fs::read(source.join("nested/file.txt")).unwrap();
 
-    let sealed = seal_snapshot_source(&source).unwrap();
+    let sealed = set_snapshot_source_immutable(&source, true).unwrap();
     assert_eq!(sealed, expected == "btrfs_snapshot");
 
     if expected == "unavailable" {
@@ -57,6 +58,7 @@ fn native_filesystem_contract() {
 
     assert!(remove_snapshot(&destination).unwrap().removed);
     assert!(!remove_snapshot(&destination).unwrap().removed);
+    assert!(!set_snapshot_source_immutable(&source, false).unwrap());
 }
 
 fn required_path(name: &str) -> PathBuf {
