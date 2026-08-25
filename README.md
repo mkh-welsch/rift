@@ -22,13 +22,19 @@ when `probe` returns an error.
 
 | Platform | Backend | Metadata behavior |
 |---|---|---|
-| macOS/APFS | directory `clonefile` | constant-time metadata |
+| macOS/APFS | directory `clonefile` | walks directory metadata; file data is CoW |
 | Linux/Btrfs subvolume | writable snapshot | constant-time metadata |
 | Linux with `FICLONE` | exact per-file reflink tree | walks metadata |
 
 Btrfs sources must already be subvolumes. This crate never converts, renames,
 or replaces a source directory. Unsupported platforms and filesystems fail
 closed.
+
+`Capability::constant_time_metadata` is deliberately `false` for APFS
+directory clones. Apple's `clonefile(2)` recursively clones the hierarchy; it
+does not expose a writable, directory-scoped constant-time snapshot. Consumers
+may offer this backend explicitly, but must not select it for an automatic
+constant-time workspace policy.
 
 ## Safety contract
 

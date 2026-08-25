@@ -18,7 +18,11 @@ pub(super) fn probe(source: &Path, destination_root: &Path) -> Result<Capability
     }
     Ok(Capability {
         backend: Backend::ApfsClonefile,
-        constant_time_metadata: true,
+        // clonefile(2) clones a directory hierarchy as if each item were
+        // cloned individually. File contents remain copy-on-write, but the
+        // namespace is traversed, so callers must not treat this backend as a
+        // constant-time metadata snapshot.
+        constant_time_metadata: false,
     })
 }
 
@@ -73,7 +77,7 @@ mod tests {
 
         let capability = probe(&source, temp.path()).unwrap();
         assert_eq!(capability.backend, Backend::ApfsClonefile);
-        assert!(capability.constant_time_metadata);
+        assert!(!capability.constant_time_metadata);
 
         let receipt = crate::snapshot_exact(&source, &destination).unwrap();
         assert_eq!(receipt.backend, Backend::ApfsClonefile);

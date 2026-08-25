@@ -7,7 +7,9 @@ The 0.3.3 release is a GO only when all of these conditions hold:
 
 1. Capability detection is fail-closed and never mutates the source.
 2. Exact APFS, Btrfs and Linux-FICLONE backends pass their native filesystem
-   tests; unsupported filesystems select Greppy's native-worktree fallback.
+   tests; capability metadata truthfully distinguishes Btrfs constant-time
+   snapshots from APFS/FICLONE tree traversal, and unsupported or non-constant
+   automatic backends select Greppy's native-worktree fallback.
 3. The source tree, index and refs are byte-for-byte unchanged after snapshot,
    agent execution, proposal creation, failure injection and cleanup.
 4. The final proposal tree and commit semantics match the 0.3.2 native
@@ -25,4 +27,3 @@ If any mandatory gate fails, no partial CoW implementation or compatibility
 layer is released. The 0.3.3 candidate is abandoned, behavior returns to the
 published Greppy 0.3.2 baseline, and a different 0.3.3 feature is selected in
 a separate decision.
-
