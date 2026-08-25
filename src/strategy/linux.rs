@@ -38,7 +38,7 @@ pub(super) fn set_snapshot_source_immutable(path: &Path, immutable: bool) -> Res
         return Ok(false);
     }
     btrfs::set_read_only(path, immutable)?;
-    Ok(btrfs::is_read_only(path)?)
+    btrfs::is_read_only(path)
 }
 
 pub(super) fn prepare_snapshot_source(path: &Path) -> Result<()> {
